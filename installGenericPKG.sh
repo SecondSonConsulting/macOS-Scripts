@@ -67,7 +67,7 @@ if [ "$downloadResult" != 0 ]; then
 fi
 
 #If there is an expected md5 and it does not match, then exit
-if [ -n "$expectedMD5" ] && [ $(md5 -q "$pkgFullPath") != "$expectedMD5" ]; then
+if [ -n "$expectedMD5" ] && [ "$(md5 -q "$pkgFullPath")" != "$expectedMD5" ]; then
 	cleanup_and_exit 1 "ERROR - MD5 mismatch. Exiting."
 fi
 
