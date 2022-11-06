@@ -2,6 +2,12 @@
 
 #Trevor Sysock (@BigMacAdmin) Second Son Consulting Inc.
 
+#Verify running as root
+if [ $(id -u) != 0 ]; then
+	echo "Script must be run as root"
+	exit 1
+fi
+
 #Gather the current OS build information. Pipe to xargs is used to trim leading whitespace
 CURRENT_OS_BUILD=$(system_profiler SPSoftwareDataType | grep "System Version: " | xargs)
 
