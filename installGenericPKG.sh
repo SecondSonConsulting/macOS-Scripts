@@ -1,6 +1,6 @@
 #!/bin/bash
-set -x
-verboseMode=1
+#set -x
+#verboseMode=1
 
 scriptName="installGenericPKG.sh"
 scriptVersion="v2.0"
