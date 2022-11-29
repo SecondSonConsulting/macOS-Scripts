@@ -3,7 +3,7 @@
 #verboseMode=1
 
 scriptName="installGenericPKG.sh"
-scriptVersion="v2.0"
+scriptVersion="v2.1"
 
 ##Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 #
@@ -30,14 +30,15 @@ scriptVersion="v2.0"
 #
 #Usage:
 # Can be run as a Mosyle Custom Command or locally.
-# Any other step in the script that fails will produce an easily read error report to standard output.
-# Uncomment set -x above for advanced debugging
+# Any step in the script that fails will produce an easily read error report to standard output.
+# Uncomment set -x and/or verboseMode=1 at the top of the script for advanced debugging
 
 # Arguments can be defined here in the script, or passed at the command line. 
 # If passed at the command line, arguments MUST BE IN THE FOLLOWING ORDER:
 # ./installGenericPKG.sh /path/to/pkg.pkgORurl md5ORteamID
 
-# TeamID and MD5 are not required fields, but are strongly recommended to ensure you install what you think you are installing.
+# TeamID and MD5 are not required fields, but are strongly recommended to ensure you install 
+# what you think you are installing.
 
 # PKGs can be validated prior to install by either the TeamID or an MD5 hash.
 # If both TeamID and MD5 are defined in the script, both will be checked.
@@ -147,8 +148,6 @@ function download_pkg()
 {
 	# First, check if we have to download the PKG
 	if [ "$pkgLocationType" = "url" ]; then
-		#Create a temporary working directory
-		tmpDir=$(mktemp -d /var/tmp/"$nameOfInstall".XXXXXX)
 		pkgInstallerPath="$tmpDir"/"$nameOfInstall".pkg
 		#Download installer to tmp folder
 		curl -LJs "$pathToPKG" -o "$pkgInstallerPath"
@@ -259,6 +258,9 @@ trap cleanup_and_exit 1 2 3 6
 
 #Make sure we're running with root privileges
 verify_root_user
+
+#Create a temporary working directory
+tmpDir=$(mktemp -d /var/tmp/"$nameOfInstall".XXXXXX)
 
 # Don't let the computer sleep until we're done
 no_sleeping

@@ -18,7 +18,13 @@
 
 #Every Sophos environment needs its own unique URL.
 #If using the Mosyle CDN variable, you can omit the "quotation marks"
+#This can be passed as an argument, or defined in the script. If there's a conflict, the one passed as an argument wins.
 downloadURL=""
+
+if [[ ${1:0:4} == "http" ]]; then
+	# Appears a URL was passed as a script argument. Setting the downloadURL accordingly.
+	downloadURL="${1}"
+fi
 
 ######################################
 #
@@ -37,6 +43,12 @@ tmpDir=$(mktemp -d /var/tmp/SSC-SophosInstall.XXXXXX)
 
 #Declare primary working directory
 installDir="$tmpDir/SophosInstall"
+
+#Check if the downloadURL was actually provided
+if [ -z $downloadURL ]; then
+	echo "ERROR: No download URL provided"
+	cleanup_and_exit 1
+fi
 
 #Download installer to tmp folder
 curl -LJs "$downloadURL" -o "$tmpDir"/SophosInstall.zip
