@@ -3,7 +3,7 @@
 #verboseMode=1
 
 scriptName="installGenericPKG.sh"
-scriptVersion="v2.1"
+scriptVersion="v2.2"
 
 ##Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 #
@@ -210,12 +210,12 @@ else
 fi
 
 # Look at the given path to PKG, and determine if its a local file path or a URL.
-if [[ ${pathToPKG:0:1} == "/" ]]; then
-	# The path to the PKG appears to be a folder path.
-	pkgLocationType="filepath"
-elif [[ ${pathToPKG:0:4} == "http" ]]; then
+if [[ ${pathToPKG:0:4} == "http" ]]; then
 	# The path to the PKG appears to be a URL.
 	pkgLocationType="url"
+elif [ -e "$pathToPKG" ]; then
+	# The path to the PKG appears to exist on the local file system
+	pkgLocationType="filepath"
 else
 	#Some kind of invalid input, not starting with a / or with http. Exit with an error
 	cleanup_and_exit 1 "Path to PKG passed at command line appears to be invalid or undefined."
