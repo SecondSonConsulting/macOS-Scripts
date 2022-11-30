@@ -2,7 +2,6 @@
 #set -x
 #verboseMode=1
 
-scriptName="installGenericPKG.sh"
 scriptVersion="v2.2"
 
 ##Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
@@ -35,7 +34,7 @@ scriptVersion="v2.2"
 
 # Arguments can be defined here in the script, or passed at the command line. 
 # If passed at the command line, arguments MUST BE IN THE FOLLOWING ORDER:
-# ./installGenericPKG.sh /path/to/pkg.pkgORurl md5ORteamID
+# ./installGenericPKG.sh [pathtopackage] [md5 | TeamID]
 
 # TeamID and MD5 are not required fields, but are strongly recommended to ensure you install 
 # what you think you are installing.
@@ -76,6 +75,9 @@ expectedMD5=""
 # Do not modify below for normal use 
 #
 ######################################
+
+scriptName=$(basename $0)
+
 
 #################
 #	Functions	#
