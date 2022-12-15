@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 #set -x
 #verboseMode=1
 
@@ -134,7 +135,7 @@ function debug_message()
 function preinstall_summary_report()
 {
 	echo "$scriptName - $scriptVersion"
-	echo "$(date): "
+	echo "$(date '+%Y%m%dT%H%M%S%z'): "
 	echo "Location: $pathToPKG"
 	echo "Location Type: $pkgLocationType"
 	echo "Expected MD5 is: $expectedMD5"
@@ -220,7 +221,7 @@ elif [ -e "$pathToPKG" ]; then
 	pkgLocationType="filepath"
 else
 	#Some kind of invalid input, not starting with a / or with http. Exit with an error
-	cleanup_and_exit 1 "Path to PKG passed at command line appears to be invalid or undefined."
+	cleanup_and_exit 1 "Path to PKG appears to be invalid or undefined."
 fi
 
 # $2 - The second argument is either an MD5 or a TeamID.
