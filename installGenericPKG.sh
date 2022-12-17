@@ -65,9 +65,11 @@ nameOfInstall="InstallPKG"
 pathToPKG=""
 
 #TeamID value is optional, but recommended. If not in use, this should read: expectedTeamID=""
+#Get this by running this command against your package: spctl -a -vv -t install /path/to/package.pkg
 expectedTeamID=""
 
 #MD5 value is optional, but recommended. If not in use, this should read: expectedMD5=""
+#Get this by running this command against your package: md5 -q /path/to/package.pkg
 expectedMD5=""
 
 ######################################
