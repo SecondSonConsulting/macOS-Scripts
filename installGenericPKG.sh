@@ -3,7 +3,7 @@
 #set -x
 #verboseMode=1
 
-scriptVersion="v2.3"
+scriptVersion="v2.2.1"
 
 ##Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 #
