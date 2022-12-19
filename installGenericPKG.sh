@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 #set -x
 #verboseMode=1
 
-scriptVersion="v2.2"
+scriptVersion="v2.3"
 
 ##Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 #
