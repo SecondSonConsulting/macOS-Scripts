@@ -1,9 +1,9 @@
 #!/bin/bash
-
 #set -x
-#verboseMode=1
 
-scriptVersion="v2.2.1"
+verboseMode=false
+
+scriptVersion="v2.3"
 
 ##Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 #
@@ -31,7 +31,7 @@ scriptVersion="v2.2.1"
 #Usage:
 # Can be run as a Mosyle Custom Command or locally.
 # Any step in the script that fails will produce an easily read error report to standard output.
-# Uncomment set -x and/or verboseMode=1 at the top of the script for advanced debugging
+# Uncomment set -x and/or verboseMode=true at the top of the script for advanced debugging
 
 # Arguments can be defined here in the script, or passed at the command line. 
 # If passed at the command line, arguments MUST BE IN THE FOLLOWING ORDER:
@@ -58,20 +58,28 @@ scriptVersion="v2.2.1"
 #
 ######################################
 
-#This is low consequence, and only used for the temp directory. Make it something meaningful to you. No special characters.
-#This can typically be left as default: nameOfInstall="InstallPKG"
+# This is low consequence, and only used for the temp directory. Make it something meaningful to you. No special characters.
+# This can typically be left as default: nameOfInstall="InstallPKG"
 nameOfInstall="InstallPKG"
 
-#Where is the PKG located?
+# Where is the PKG located?
 pathToPKG=""
 
-#TeamID value is optional, but recommended. If not in use, this should read: expectedTeamID=""
-#Get this by running this command against your package: spctl -a -vv -t install /path/to/package.pkg
+# TeamID value is optional, but recommended. If not in use, this should read: expectedTeamID=""
+# Get this by running this command against your package: spctl -a -vv -t install /path/to/package.pkg
 expectedTeamID=""
 
-#MD5 value is optional, but recommended. If not in use, this should read: expectedMD5=""
-#Get this by running this command against your package: md5 -q /path/to/package.pkg
+# MD5 value is optional, but recommended. If not in use, this should read: expectedMD5=""
+# Get this by running this command against your package: md5 -q /path/to/package.pkg
 expectedMD5=""
+
+# Package Identifier. If you fill out this option, you also must fill out the pkgVersion option.
+# If this option is included, the script will exit if the same version of this pkg has already been successfully installed on the device.
+# The script only prevents install if the expectedPackageVersion is an exact match.
+# Example: expectedPackageID="com.secondsonconsulting.pkg.Renew" expectedPackageVersion="1.0.1"
+expectedPackageID=""
+
+expectedPackageVersion=""
 
 ######################################
 #
@@ -79,8 +87,7 @@ expectedMD5=""
 #
 ######################################
 
-scriptName=$(basename $0)
-
+scriptName=$(basename "$0")
 
 #################
 #	Functions	#
@@ -127,10 +134,34 @@ function no_sleeping()
 function debug_message()
 {
 #set +x
-    if [ "$verboseMode" = 1 ]; then
+    if "$verboseMode"; then
     	/bin/echo "DEBUG: $*"
     fi
 #set -x
+}
+
+# Check if the specified expectedPackageID and version have already run on this machine
+function check_package_receipt(){
+	# If the expectedPackageID variable is not empty
+	if [ ! -z "$expectedPackageID" ] || [ ! -z "$expectedPackageVersion" ];then
+		# Verify a version has also been included. Otherwise, exit with an error (this is a misconfiguration)
+		if [ -z "$expectedPackageID" ] || [ -z "$expectedPackageVersion" ]; then
+			cleanup_and_exit 1 "ERROR: Misconfiguration. Both expectedPackageID and expectedPackageVersion are required if using that feature."
+		fi
+		# Check the receipts and get the version if it exists
+		installedPackageVersion=$(/usr/libexec/PlistBuddy -c 'Print :pkg-version' /dev/stdin <<< "$(pkgutil --pkg-info-plist "$expectedPackageID" 2> /dev/null)" 2> /dev/null)
+		# Check if the install is not needed
+		if [[ "$installedPackageVersion" == "$expectedPackageVersion" ]]; then
+			echo "$scriptName - $scriptVersion"
+			echo "$(date '+%Y%m%dT%H%M%S%z'): "
+			echo "Package ID $expectedPackageID is already on $expectedPackageVersion no action needed"
+			cleanup_and_exit 0 "Success"
+		else
+            echo "No receipt for $expectedPackageID $expectedPackageVersion - Proceeding with install"
+        fi
+	else
+		echo "No Package ID defined"
+	fi
 }
 
 # This is a report regarding the installation details that gets printed prior to the script actually running
@@ -161,7 +192,7 @@ function download_pkg()
 		if [ "$downloadResult" != 0 ]; then
 			cleanup_and_exit 1 "Download failed. Exiting."
 		fi
-		debug_message "PKG downloaded successfully."
+		debug_message "PKG download completed."
 	else
 		#If the PKG is a local file, set our installer path variable accordingly
 		pkgInstallerPath="$pathToPKG"
@@ -264,14 +295,17 @@ trap cleanup_and_exit 1 2 3 6
 #Make sure we're running with root privileges
 verify_root_user
 
+#Print the preinstall Summary
+preinstall_summary_report
+
+# Check whether this package has already been successfully installed
+check_package_receipt
+
 #Create a temporary working directory
 tmpDir=$(mktemp -d /var/tmp/"$nameOfInstall".XXXXXX)
 
 # Don't let the computer sleep until we're done
 no_sleeping
-
-#Print the preinstall Summary
-preinstall_summary_report
 
 #Download happens here, if needed
 download_pkg
@@ -283,4 +317,4 @@ verify_pkg
 install_pkg
 
 #If we still haven't exited, that means there have been no failures detected. Cleanup and exit
-cleanup_and_exit 0 "Installation successful"
+cleanup_and_exit 0 "Success"
