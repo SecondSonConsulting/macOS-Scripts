@@ -82,8 +82,8 @@ nameOfInstall="InstallPKG"
 pathToPKG=""
 
 # Is this PKG inside a .zip? Must be either true or false or unset
-pkgInZip=true
-#pkgInZip=false
+#pkgInZip=true
+pkgInZip=false
 
 # TeamID value is optional, but recommended. If not in use, this should read: expectedTeamID=""
 # Get this by running this command against your package: spctl -a -vv -t install /path/to/package.pkg
