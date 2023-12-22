@@ -3,7 +3,7 @@
 
 verboseMode=false
 
-scriptVersion="v2.3"
+scriptVersion="v2.4"
 
 ##Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 #
@@ -51,6 +51,22 @@ scriptVersion="v2.3"
 # ./installGenericPKG.sh /path/to/installer.pkg 7Q6XP5698G 9741c346eeasdf31163e13b9db1241b3
 #
 
+# Additional features have been added since the original release. These features are not supported 
+# when using command line arguments, and must be configured within the script
+
+# Package Identifier. 
+    # If you fill out this option, you also must fill out the pkgVersion option.
+    # If this option is included, the script will exit if the same version of this pkg has already been successfully installed on the device.
+    # The script only prevents install if the expectedPackageVersion is an exact match.
+    # Example: expectedPackageID="com.secondsonconsulting.pkg.Renew" expectedPackageVersion="1.0.1"
+
+# Package in Zip
+    # This script supports pkgs contained within a .zip
+    # Some packages use the old style bundle format (such as Adobe CC custom PKGs) and this doesn't play well with curl, etc.
+    # Set the pkgInZip=true option to add steps to unzip the download prior to running the package contained within
+    # When using the expectedMD5 validation option in conjunciton with pkgInZip, you MUST specify the md5 checksum of the .zip file, not the pkg within
+    # TeamID is still supported with pkgInZip, and will be checked against the package after being unzipped
+	# DO NOT include multiple pkgs in your zip file. Other files can be bundled in the zip, and will be unzipped right beside your pkg
 
 ######################################
 #
@@ -65,6 +81,10 @@ nameOfInstall="InstallPKG"
 # Where is the PKG located?
 pathToPKG=""
 
+# Is this PKG inside a .zip? Must be either true or false or unset
+pkgInZip=true
+#pkgInZip=false
+
 # TeamID value is optional, but recommended. If not in use, this should read: expectedTeamID=""
 # Get this by running this command against your package: spctl -a -vv -t install /path/to/package.pkg
 expectedTeamID=""
@@ -73,10 +93,7 @@ expectedTeamID=""
 # Get this by running this command against your package: md5 -q /path/to/package.pkg
 expectedMD5=""
 
-# Package Identifier. If you fill out this option, you also must fill out the pkgVersion option.
-# If this option is included, the script will exit if the same version of this pkg has already been successfully installed on the device.
-# The script only prevents install if the expectedPackageVersion is an exact match.
-# Example: expectedPackageID="com.secondsonconsulting.pkg.Renew" expectedPackageVersion="1.0.1"
+# Package Identifier and Expected Version. If the device already has a receipt for this package ID for the specified version, script will exit
 expectedPackageID=""
 
 expectedPackageVersion=""
@@ -182,9 +199,15 @@ function preinstall_summary_report()
 #This function will download the pkg (if it is hosted via url) and then verify the MD5 or TeamID if provided.
 function download_pkg()
 {
-	# First, check if we have to download the PKG
+	# First, check if we're downloading a pkg or a zip
+	if [ ! -z $pkgInZip ] && $pkgInZip; then
+		downloadFileType="zip"
+	else
+		downloadFileType="pkg"
+	fi
+	# Next, check if we have to download the PKG
 	if [ "$pkgLocationType" = "url" ]; then
-		pkgInstallerPath="$tmpDir"/"$nameOfInstall".pkg
+		pkgInstallerPath="$tmpDir"/"$nameOfInstall.$downloadFileType"
 		#Download installer to tmp folder
 		curl -LJs "$pathToPKG" -o "$pkgInstallerPath"
 		downloadResult=$?
@@ -192,21 +215,36 @@ function download_pkg()
 		if [ "$downloadResult" != 0 ]; then
 			cleanup_and_exit 1 "Download failed. Exiting."
 		fi
-		debug_message "PKG download completed."
+		debug_message "Download completed."
 	else
 		#If the PKG is a local file, set our installer path variable accordingly
 		pkgInstallerPath="$pathToPKG"
 	fi
 }
 
-function verify_pkg()
-{
-	# If an expectedMD5 was given, test against the actual installer and exit upon mismatch
-	actualMD5="$(md5 -q "$pkgInstallerPath")"
+function unzip_the_download(){
+	ditto -x -k "$pkgInstallerPath" "$tmpDir"
+	dittoResult=$?
+	#Verify ditto exited with 0
+	if [ "$dittoResult" != 0 ]; then
+		cleanup_and_exit 1 "Ditto/Unzip failed. Exiting."
+	fi
+	pkgInstallerPath=$(find "$tmpDir" -name "*.pkg")
+
+}
+
+function check_md5(){
+    # If an expectedMD5 was given, test against the actual installer and exit upon mismatch
+	actualMD5=$(md5 -q "$pkgInstallerPath" 2>/dev/null)
 	if [ -n "$expectedMD5" ] && [ "$actualMD5" != "$expectedMD5" ]; then
 	cleanup_and_exit 1 "ERROR - MD5 mismatch. Exiting."
 	fi
 
+
+}
+
+function verify_pkg()
+{
 	# If an expectedTeamID was given, test against the actual installer and exit upon mismatch
 	actualTeamID=$(spctl -a -vv -t install "$pkgInstallerPath" 2>&1 | awk -F '(' '/origin=/ {print $2 }' | tr -d ')' )
 	# If an TeamID was given, test against the actual installer and exit upon mismatch
@@ -310,7 +348,15 @@ no_sleeping
 #Download happens here, if needed
 download_pkg
 
-#MD5 and TeamID verification happens here
+#MD5 verification happens here
+check_md5
+
+# If the PKG is in a zip, unzip it
+if [ ! -z $pkgInZip ] && $pkgInZip; then
+    unzip_the_download
+fi
+
+#TeamID verification happens here
 verify_pkg
 
 #If we haven't exited yet, then the PKG was verified and we can install
