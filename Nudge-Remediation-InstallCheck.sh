@@ -2,12 +2,10 @@
 # shellcheck shell=bash
 #set -x
 
-# Nudge-Remediation-InstallCheck.sh by: Trevor Sysock
+# Nudge-Remediation-InstallCheck.sh by: Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 # 2024-08-18 - updated and published 2025-08-29
 # v.2.0
 
-## Written by Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
-#
 #  Copyright (c) 2025 Second Son Consulting
 #  
 #  Permission is hereby granted, free of charge, to any person obtaining a copy
