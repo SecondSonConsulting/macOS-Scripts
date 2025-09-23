@@ -4,7 +4,7 @@
 
 # Nudge-Remediation-InstallCheck.sh by: Trevor Sysock (aka @bigmacadmin) at Second Son Consulting Inc.
 # 2024-08-18 - updated and published 2025-08-29
-# v.2.0
+# v.2.1
 
 #  Copyright (c) 2025 Second Son Consulting
 #  
@@ -85,6 +85,10 @@ runAsUser() {
 ##########################
 #   Script Starts Here   #
 ##########################
+# If Nudge isn't installed, then exit no remediation needed (because munki should pick up the need to install natively)
+if [[ ! -d "/Applications/Utilities/Nudge.app" ]]; then
+    no_remediation_needed
+fi
 
 # Verify that the logger daemon is running, only if we're checking for it, and if not then we need remediation
 if [[ "$checkForLogger" == "true" ]] && ! launchctl list | grep -qi 'com.github.macadmins.Nudge.Logger' ; then
